@@ -119,9 +119,9 @@ class NeuralNetwork:
 X = np.array([[0,0], [0,1], [1,0], [1,1]])
 y = np.array([[0], [1], [1], [0]])
 
-nn = NeuralNetwork()
+nn = NeuralNetwork(learning_rate=0.1)
 nn.add_layer(Layer((2, 3), relu, relu_derivative))  # Hidden layer 1
 nn.add_layer(Layer((3, 1), sigmoid, sigmoid_derivative))  # Output layer
 
 validation_data = (X, y)  # Typically, you would use separate validation data
-nn.train(X, y, learning_rate=0.1, epochs=2000, batch_size=2, validation_data=validation_data, early_stopping_rounds=10)
+nn.train(X, y, epochs=2000, batch_size=2, validation_data=validation_data, early_stopping_rounds=10)
