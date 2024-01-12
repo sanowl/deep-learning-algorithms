@@ -11,24 +11,22 @@ class AdvancedCNNModel(tf.keras.Model):
         super(AdvancedCNNModel, self).__init__()
         
         # Convolutional layers
-        self.conv1 = tf.keras.layers.Conv2D(64, (3, 3), activation=custom_activation, input_shape=(32, 32, 3))
-        self.conv2 = tf.keras.layers.Conv2D(128, (3, 3), activation=custom_activation)
-        self.conv3 = tf.keras.layers.Conv2D(256, (3, 3), activation=custom_activation)
-        self.conv4 = tf.keras.layers.Conv2D(512, (3, 3), activation=custom_activation)
-        
-        # Max pooling layers
-        self.pooling1 = tf.keras.layers.MaxPooling2D((2, 2))
-        self.pooling2 = tf.keras.layers.MaxPooling2D((2, 2))
-        self.pooling3 = tf.keras.layers.MaxPooling2D((2, 2))
-        self.pooling4 = tf.keras.layers.MaxPooling2D((2, 2))
+        self.conv1 = tf.keras.layers.Conv2D(64, (3, 3), activation=custom_activation, padding='same', input_shape=(32, 32, 3))
+        self.conv2 = tf.keras.layers.Conv2D(128, (3, 3), activation=custom_activation, padding='same')
+        self.conv3 = tf.keras.layers.Conv2D(256, (3, 3), activation=custom_activation, padding='same')
+        self.conv4 = tf.keras.layers.Conv2D(512, (3, 3), activation=custom_activation, padding='same')
         
         # Batch normalization layers
         self.batch_norm1 = tf.keras.layers.BatchNormalization()
         self.batch_norm2 = tf.keras.layers.BatchNormalization()
+        self.batch_norm3 = tf.keras.layers.BatchNormalization()
+        self.batch_norm4 = tf.keras.layers.BatchNormalization()
         
         # Spatial Dropout layers
         self.spatial_dropout1 = tf.keras.layers.SpatialDropout2D(0.3)
         self.spatial_dropout2 = tf.keras.layers.SpatialDropout2D(0.3)
+        self.spatial_dropout3 = tf.keras.layers.SpatialDropout2D(0.3)
+        self.spatial_dropout4 = tf.keras.layers.SpatialDropout2D(0.3)
         
         # Global Average Pooling
         self.global_average_pooling = tf.keras.layers.GlobalAveragePooling2D()
@@ -45,22 +43,32 @@ class AdvancedCNNModel(tf.keras.Model):
     def call(self, x):
         x = self.conv1(x)
         x = self.batch_norm1(x)
-        x = self.pooling1(x)
         x = self.spatial_dropout1(x)
+        
+        x_skip1 = x  # Skip connection 1
+        
         x = self.conv2(x)
         x = self.batch_norm2(x)
-        x = self.pooling2(x)
         x = self.spatial_dropout2(x)
+        
+        x_skip2 = x  # Skip connection 2
+        
         x = self.conv3(x)
-        x = self.pooling3(x)
+        x = self.batch_norm3(x)
+        x = self.spatial_dropout3(x)
+        
+        x_skip3 = x  # Skip connection 3
+        
         x = self.conv4(x)
-        x = self.pooling4(x)
+        x = self.batch_norm4(x)
+        x = self.spatial_dropout4(x)
+        
+        x_skip4 = x  # Skip connection 4
+        
         x = self.global_average_pooling(x)
         
         # Apply dropout for regularization
         x = self.dropout1(x)
-        
-        x_skip = x  # Skip connection
         
         x = self.fc1(x)
         
@@ -70,7 +78,7 @@ class AdvancedCNNModel(tf.keras.Model):
         x = self.fc2(x)
         
         # Skip connection addition
-        x = x + x_skip
+        x = x + x_skip1 + x_skip2 + x_skip3 + x_skip4
         
         return self.fc3(x)
 
@@ -108,7 +116,7 @@ data_augmentation = tf.keras.Sequential([
 
 # Train the advanced model with data augmentation
 batch_size = 64
-epochs = 50
+epochs = 60
 model.fit(data_augmentation(X_train), y_train, epochs=epochs, batch_size=batch_size, validation_split=0.2)
 
 # Evaluate the advanced model
