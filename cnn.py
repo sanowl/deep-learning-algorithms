@@ -6,9 +6,9 @@ def custom_activation(x):
     return tf.math.sin(tf.math.square(x))
 
 # Define the CNN architecture
-class CNNModel(tf.keras.Model):
+class AdvancedCNNModel(tf.keras.Model):
     def __init__(self, num_classes):
-        super(CNNModel, self).__init__()
+        super(AdvancedCNNModel, self).__init__()
         
         # Convolutional layers
         self.conv1 = tf.keras.layers.Conv2D(64, (3, 3), activation=custom_activation, input_shape=(32, 32, 3))
@@ -26,7 +26,14 @@ class CNNModel(tf.keras.Model):
         self.batch_norm1 = tf.keras.layers.BatchNormalization()
         self.batch_norm2 = tf.keras.layers.BatchNormalization()
         
-        # Fully connected layers
+        # Spatial Dropout layers
+        self.spatial_dropout1 = tf.keras.layers.SpatialDropout2D(0.3)
+        self.spatial_dropout2 = tf.keras.layers.SpatialDropout2D(0.3)
+        
+        # Global Average Pooling
+        self.global_average_pooling = tf.keras.layers.GlobalAveragePooling2D()
+        
+        # Fully connected layers with skip connections
         self.fc1 = tf.keras.layers.Dense(1024, activation=custom_activation)
         self.fc2 = tf.keras.layers.Dense(512, activation=custom_activation)
         self.fc3 = tf.keras.layers.Dense(num_classes, activation='softmax')
@@ -39,17 +46,21 @@ class CNNModel(tf.keras.Model):
         x = self.conv1(x)
         x = self.batch_norm1(x)
         x = self.pooling1(x)
+        x = self.spatial_dropout1(x)
         x = self.conv2(x)
         x = self.batch_norm2(x)
         x = self.pooling2(x)
+        x = self.spatial_dropout2(x)
         x = self.conv3(x)
         x = self.pooling3(x)
         x = self.conv4(x)
         x = self.pooling4(x)
-        x = tf.keras.layers.Flatten()(x)
+        x = self.global_average_pooling(x)
         
         # Apply dropout for regularization
         x = self.dropout1(x)
+        
+        x_skip = x  # Skip connection
         
         x = self.fc1(x)
         
@@ -57,6 +68,10 @@ class CNNModel(tf.keras.Model):
         x = self.dropout2(x)
         
         x = self.fc2(x)
+        
+        # Skip connection addition
+        x = x + x_skip
+        
         return self.fc3(x)
 
 # Load and preprocess your dataset (e.g., CIFAR-10)
@@ -67,8 +82,8 @@ X_train, X_test = X_train / 255.0, X_test / 255.0  # Normalize pixel values to [
 # Define the number of classes in your dataset
 num_classes = 10  # Example: 10 classes for CIFAR-10
 
-# Create an instance of the model
-model = CNNModel(num_classes)
+# Create an instance of the advanced model
+model = AdvancedCNNModel(num_classes)
 
 # Define loss function and optimizer
 loss_fn = tf.keras.losses.SparseCategoricalCrossentropy()
@@ -91,11 +106,11 @@ data_augmentation = tf.keras.Sequential([
     tf.keras.layers.experimental.preprocessing.RandomRotation(0.2),
 ])
 
-# Train the model with data augmentation
+# Train the advanced model with data augmentation
 batch_size = 64
-epochs = 40
+epochs = 50
 model.fit(data_augmentation(X_train), y_train, epochs=epochs, batch_size=batch_size, validation_split=0.2)
 
-# Evaluate the model
+# Evaluate the advanced model
 test_loss, test_accuracy = model.evaluate(X_test, y_test)
 print(f"Test Loss: {test_loss}, Test Accuracy: {test_accuracy}")
