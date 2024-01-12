@@ -21,7 +21,7 @@ def mse_loss(y_true, y_pred):
 class Layer:
     def __init__(self, size, activation_function, activation_derivative):
         self.weights = np.random.randn(size[0], size[1]) * np.sqrt(2. / size[0])
-        self.bias = np.random.randn(size[1], 1)
+        self.bias = np.random.randn(1, size[1])  # Fix bias dimensions
         self.activation_function = activation_function
         self.activation_derivative = activation_derivative
         self.output = None
@@ -31,7 +31,7 @@ class Layer:
 
     def activate(self, x):
         self.input = x
-        self.output = self.activation_function(np.dot(x, self.weights) + self.bias.T)
+        self.output = self.activation_function(np.dot(x, self.weights) + self.bias)  # Remove .T
         return self.output
 
 # Neural Network class
@@ -119,9 +119,11 @@ class NeuralNetwork:
 X = np.array([[0,0], [0,1], [1,0], [1,1]])
 y = np.array([[0], [1], [1], [0]])
 
-nn = NeuralNetwork(learning_rate=0.1)
-nn.add_layer(Layer((2, 3), relu, relu_derivative))  # Hidden layer 1
-nn.add_layer(Layer((3, 1), sigmoid, sigmoid_derivative))  # Output layer
+# Create a more complex network
+nn = NeuralNetwork(learning_rate=0.1, lambda_reg=0.001, momentum=0.9)
+nn.add_layer(Layer((2, 64), relu, relu_derivative))  # Hidden layer 1 with 64 neurons
+nn.add_layer(Layer((64, 32), relu, relu_derivative))  # Hidden layer 2 with 32 neurons
+nn.add_layer(Layer((32, 1), sigmoid, sigmoid_derivative))  # Output layer
 
 validation_data = (X, y)  # Typically, you would use separate validation data
-nn.train(X, y, epochs=2000, batch_size=2, validation_data=validation_data, early_stopping_rounds=10)
+nn.train(X, y, epochs=4000, batch_size=2, validation_data=validation_data, early_stopping_rounds=20)
